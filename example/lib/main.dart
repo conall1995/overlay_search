@@ -71,6 +71,7 @@ class _HomeSearchState extends State<HomeSearch> {
   @override
   Widget build(BuildContext context) {
     return SearchWithList(
+      itemBuilder: (value) => Text(value.title),
       overlaySearchController: widget.overlayController,
       list: list
           .map(

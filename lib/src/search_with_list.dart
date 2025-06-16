@@ -1,14 +1,14 @@
 //TODO: ADD ENABLE LAYERLINK
+
 import 'package:flutter/material.dart';
 import 'package:overlay_search/src/overlay_content.dart';
-import 'package:overlay_search/src/overlay_list_item.dart';
 
 import 'package:overlay_search/src/search_text_field.dart';
 
 import 'debounce.dart';
 import 'overlay_search_controller.dart';
 
-class SearchWithList extends StatefulWidget {
+class SearchWithList<T> extends StatefulWidget {
   const SearchWithList({
     super.key,
     required this.list,
@@ -20,11 +20,10 @@ class SearchWithList extends StatefulWidget {
     this.onChanged,
     this.enableDebounce,
     this.hint = "Search",
+    this.label="Search",
     this.focusedHint,
     this.hintStyle,
     this.showWhenUnlinked,
-    this.titleStyle,
-    this.contentStyle,
     this.iconColor,
     this.searchBackgroundColor,
     this.overlayBackgroundColor,
@@ -34,30 +33,33 @@ class SearchWithList extends StatefulWidget {
     this.cursorColor,
     this.searchTextStyle,
     this.notFoundText,
+    this.notFoundWidgetBuilder,
     this.onItemSelected,
     this.debounceDuration,
     this.notFoundTextStyle,
-    this.title,
-    this.action,
-    this.leading,
+    required this.itemBuilder,
+    this.loadingWidget,
+    this.prefixIcon,
   });
-  final List<OverlayItemModel> list;
+
+  final Widget Function(T value) itemBuilder;
+  final List<T>? list;
   final bool? isLoading;
-  final OverlaySearchController overlaySearchController;
+  final OverlaySearchController<T> overlaySearchController;
   final VoidCallback? suffixAction;
+  final IconData? prefixIcon;
   final VoidCallback? onTap;
   final bool? disableComponentSearch;
   final Function(String)? onChanged;
   final bool? enableDebounce;
   final String? hint;
+  final String? label;
   final String? focusedHint;
   final TextStyle? hintStyle;
   final bool? showWhenUnlinked;
-  final TextStyle? titleStyle;
-  final TextStyle? contentStyle;
   final TextStyle? searchTextStyle;
   final TextStyle? notFoundTextStyle;
-
+  final Widget? loadingWidget;
   final Color? iconColor;
   final Color? searchBackgroundColor;
   final Color? overlayBackgroundColor;
@@ -66,29 +68,24 @@ class SearchWithList extends StatefulWidget {
   final double? shiftOverlayFromLeft;
   final Color? cursorColor;
   final String? notFoundText;
-  final Function(OverlayItemModel item)? onItemSelected;
+  final Widget Function(String searchText)? notFoundWidgetBuilder;
+  final Function(T item)? onItemSelected;
   final Duration? debounceDuration;
 
-  final Widget? title;
-  final Widget? action;
-  final Widget? leading;
+
   @override
-  State<SearchWithList> createState() => _SearchWithListState();
+  State<SearchWithList<T>> createState() => _SearchWithListState();
 }
 
-class _SearchWithListState extends State<SearchWithList> {
+class _SearchWithListState<T> extends State<SearchWithList<T>> {
   @override
-  void didUpdateWidget(covariant SearchWithList oldWidget) {
+  void didUpdateWidget(covariant SearchWithList<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (oldWidget.isLoading != widget.isLoading && widget.isLoading != null) {
         widget.overlaySearchController.updateLoading(widget.isLoading!);
       }
-      widget.overlaySearchController.updateStocks(widget.list
-          .where((element) => element.title.toLowerCase().contains(widget
-              .overlaySearchController.searchController.text
-              .toLowerCase()))
-          .toList());
+      widget.overlaySearchController.updateStocks(widget.list);
     });
   }
 
@@ -100,8 +97,10 @@ class _SearchWithListState extends State<SearchWithList> {
         focusNode: widget.overlaySearchController.searchFocusNode,
         controller: widget.overlaySearchController.searchController,
         hint: widget.hint,
+        suffixIcon: widget.prefixIcon,
         focusedHint: widget.focusedHint,
         hintStyle: widget.hintStyle,
+        label:widget.label,
         backgroundColor: widget.searchBackgroundColor,
         iconColor: widget.iconColor,
         cursorColor: widget.cursorColor,
@@ -116,14 +115,19 @@ class _SearchWithListState extends State<SearchWithList> {
       ),
     );
   }
-
+  void show(){
+    showOverlay(
+      context,
+      (widget.list as List?)?.cast<T>(),
+    );
+  }
   void _onTap() {
     widget.onTap?.call();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.overlaySearchController.entry == null) {
         showOverlay(
           context,
-          widget.list,
+          (widget.list as List?)?.cast<T>(),
         );
       } else {
         widget.overlaySearchController.hideOverlay();
@@ -149,16 +153,15 @@ class _SearchWithListState extends State<SearchWithList> {
       }
     }
     if (widget.disableComponentSearch != true) {
-      widget.overlaySearchController
-          .updateStocks(widget.list, searchKey: value);
+      widget.overlaySearchController.updateStocks(widget.list);
     }
   }
 
   void showOverlay(
     BuildContext context,
-    List<OverlayItemModel> stocks,
+    List<T>? stocks,
   ) {
-    widget.overlaySearchController.updateStocks(stocks);
+    widget.overlaySearchController.updateStocks(widget.list);
     final overlayState = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
@@ -172,21 +175,24 @@ class _SearchWithListState extends State<SearchWithList> {
           offset: Offset(widget.shiftOverlayFromLeft ?? 0, size.height + 8),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OverlayContent(
-              stocksTop: widget.overlaySearchController.itemList,
+            child: OverlayContent<T>(
+              loadingWidget:widget.loadingWidget ,
+              stocksTop: widget.overlaySearchController.itemList?.cast<T>(),
               controller: widget.overlaySearchController,
-              titleStyle: widget.titleStyle,
-              contentStyle: widget.contentStyle,
+              // itemBuilder:(value) =>  Text(value.toString()),
+              itemBuilder: widget.itemBuilder,
               backgroundColor: widget.overlayBackgroundColor,
               maxOverlayHeight: widget.overlayHeight,
               notFoundTextStyle: widget.notFoundTextStyle,
-              title: widget.title,
-              action: widget.action,
-              leading: widget.leading,
               onItemSelected: (item) {
                 widget.onItemSelected?.call(item);
               },
               notFoundText: widget.notFoundText,
+              notFoundWidgetBuilder: widget.notFoundWidgetBuilder != null
+                  ? () => widget.notFoundWidgetBuilder!(
+                        widget.overlaySearchController.searchController.text,
+                      )
+                  : null,
             ),
           ),
         ),

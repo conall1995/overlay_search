@@ -23,9 +23,9 @@ void main() {
         OverlayItemModel(title: 'Cherry'),
       ];
       controller.updateStocks(mockItems, searchKey: 'a');
-      expect(controller.itemList.length, 2);
-      expect(controller.itemList[0].title, 'Apple');
-      expect(controller.itemList[1].title, 'Banana');
+      expect(controller.itemList?.length, 2);
+      expect(controller.itemList?[0].title, 'Apple');
+      expect(controller.itemList?[1].title, 'Banana');
     });
 
     test('updateLoading should update isLoading state', () {

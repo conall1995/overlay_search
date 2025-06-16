@@ -21,8 +21,10 @@ class SearchTextField extends StatefulWidget {
     this.style,
     this.cursorColor,
     this.focusedHint,
+    this.label,
   });
   final String? hint;
+  final String? label;
   final TextStyle? hintStyle;
   final String? focusedHint;
 
@@ -49,33 +51,30 @@ class SearchTextField extends StatefulWidget {
 }
 
 class _SearchTextFieldState extends State<SearchTextField> {
-  late final TextEditingController controller;
-
+  TextEditingController get _effectiveController =>
+      widget.controller ?? _internalController;
+  late final TextEditingController _internalController;
   @override
   void initState() {
     super.initState();
-    if (widget.controller == null) {
-      controller = TextEditingController();
-    } else {
-      controller = widget.controller!;
-    }
-    controller.addListener(() {
+    _internalController = TextEditingController();
+    _effectiveController.addListener(() {
       setState(() {});
     });
     widget.focusNode.addListener(() {
       setState(() {});
     });
+
   }
 
   @override
   void dispose() {
     if (widget.controller == null) {
-      controller.dispose();
+      _internalController.dispose();
     }
     widget.focusNode.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -83,13 +82,14 @@ class _SearchTextFieldState extends State<SearchTextField> {
         focusNode: widget.focusNode,
         decoration: _inputDecoration,
         key: widget.searchKey,
+
         onTap: () {
           widget.onTap?.call();
           setState(() {});
         },
         textAlignVertical: TextAlignVertical.center,
         textAlign: TextAlign.center,
-        controller: controller,
+        controller: _effectiveController,
         style: widget.style,
         onChanged: (value) {
           widget.onChanged?.call(value);
@@ -102,24 +102,25 @@ class _SearchTextFieldState extends State<SearchTextField> {
   InputDecoration get _inputDecoration => InputDecoration(
         hintText: widget.focusNode.hasFocus ? widget.focusedHint : widget.hint,
         hintStyle: widget.hintStyle,
-        floatingLabelAlignment: FloatingLabelAlignment.center,
+        labelText: widget.label,
+        floatingLabelAlignment: FloatingLabelAlignment.start,
         prefixIcon: IconButton(
           icon: Icon(
-            widget.prefixIcon ?? Icons.search,
+            widget.prefixIcon,
           ),
           color: widget.iconColor,
           onPressed: () {
-            widget.suffixAction?.call(controller.text.trim());
+            widget.suffixAction?.call(_effectiveController.text.trim());
           },
         ),
         suffixIcon: widget.isAnimatedSuffix
             ? AnimatedOpacity(
-                opacity: controller.text.isEmpty ? 0.0 : 1.0,
+                opacity: _effectiveController.text.isEmpty ? 0.0 : 1.0,
                 duration: const Duration(milliseconds: 400),
                 child: IconButton(
                   onPressed: () {
-                    widget.suffixAction?.call(controller.text.trim());
-                    controller.clear();
+                    widget.suffixAction?.call(_effectiveController.text.trim());
+                    _effectiveController.clear();
                     FocusScope.of(context).unfocus();
                   },
                   icon: Icon(
@@ -133,13 +134,13 @@ class _SearchTextFieldState extends State<SearchTextField> {
               )
             : IconButton(
                 onPressed: () {
-                  widget.suffixAction?.call(controller.text.trim());
-                  controller.clear();
+                  widget.suffixAction?.call(_effectiveController.text.trim());
+                  _effectiveController.clear();
                   FocusScope.of(context).unfocus();
                 },
                 color: widget.iconColor,
                 icon: Icon(
-                  widget.suffixIcon ?? Icons.close,
+                  widget.suffixIcon,
                   color: widget.iconColor,
                 ),
                 style: IconButton.styleFrom(
