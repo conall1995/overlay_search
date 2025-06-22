@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:overlay_search/src/overlay_content.dart';
-
 import 'package:overlay_search/src/search_text_field.dart';
 
 import 'debounce.dart';
@@ -40,7 +39,7 @@ class SearchWithList<T> extends StatefulWidget {
     required this.itemBuilder,
     this.loadingWidget,
     this.prefixIcon,
-  });
+      this.onFieldSubmitted});
 
   final Widget Function(T value) itemBuilder;
   final List<T>? list;
@@ -71,7 +70,7 @@ class SearchWithList<T> extends StatefulWidget {
   final Widget Function(String searchText)? notFoundWidgetBuilder;
   final Function(T item)? onItemSelected;
   final Duration? debounceDuration;
-
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   State<SearchWithList<T>> createState() => _SearchWithListState();
@@ -94,6 +93,7 @@ class _SearchWithListState<T> extends State<SearchWithList<T>> {
     return CompositedTransformTarget(
       link: widget.overlaySearchController.layerLink,
       child: SearchTextField(
+        onFieldSubmitted: widget.onFieldSubmitted,
         focusNode: widget.overlaySearchController.searchFocusNode,
         controller: widget.overlaySearchController.searchController,
         hint: widget.hint,

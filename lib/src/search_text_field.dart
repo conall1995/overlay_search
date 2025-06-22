@@ -22,7 +22,7 @@ class SearchTextField extends StatefulWidget {
     this.cursorColor,
     this.focusedHint,
     this.label,
-  });
+      this.onFieldSubmitted});
   final String? hint;
   final String? label;
   final TextStyle? hintStyle;
@@ -45,6 +45,7 @@ class SearchTextField extends StatefulWidget {
   final TextEditingController? controller;
   final bool isAnimatedSuffix;
   final VoidCallback? onTap;
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   State<SearchTextField> createState() => _SearchTextFieldState();
@@ -91,6 +92,7 @@ class _SearchTextFieldState extends State<SearchTextField> {
         textAlign: TextAlign.center,
         controller: _effectiveController,
         style: widget.style,
+        onFieldSubmitted: widget.onFieldSubmitted,
         onChanged: (value) {
           widget.onChanged?.call(value);
         },
@@ -157,6 +159,6 @@ class _SearchTextFieldState extends State<SearchTextField> {
           vertical: 0,
         ),
         filled: true,
-        fillColor: widget.backgroundColor?.withOpacity(0.15),
+        fillColor: widget.backgroundColor,
       );
 }
